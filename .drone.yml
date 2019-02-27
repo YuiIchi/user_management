@@ -12,9 +12,9 @@ steps:
    - mvn --version
    - java -version
    
-- name: test
-  image: maven:3-jdk-8
-  commands:
-  - mvn test -B
-  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+ - name: test
+   image: maven:3-jdk-8
+   commands:
+   - mvn test -B
+   - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
  
