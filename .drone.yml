@@ -17,8 +17,8 @@ steps:
    commands:
    - mvn test -B
    - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
- 
- trigger:
+
+trigger:
   branch:
   - master
   event:
