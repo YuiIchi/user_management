@@ -15,8 +15,10 @@ trigger:
   event:
   - push
 
+
 ---
 kind: pipeline
+name: build
 
 steps:
  - name: test
