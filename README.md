@@ -5,3 +5,4 @@ ok
 
 ok
 
+测试 Codefresh 触发器
