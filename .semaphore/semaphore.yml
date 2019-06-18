@@ -41,7 +41,7 @@ blocks:
             # More on caching: https://docs.semaphoreci.com/article/54-toolbox-reference#cache
           - cache restore spring-pipeline-maven-$SEMAPHORE_GIT_BRANCH-$(checksum pom.xml),spring-pipeline-maven-$SEMAPHORE_GIT_BRANCH,spring-pipeline-maven
 
-          - mvn -q package jmeter:configure -Dmaven.test.skip=true
+          - mvn -q package -Dmaven.test.skip=true
 
             # Store the latest version of dependencies in cache,
             # to be used in next blocks and future workflows:
@@ -70,24 +70,3 @@ blocks:
       - name: Integration tests
         commands:
           - mvn test -Pintegration-testing
-
-  - name: "Performance tests"
-    task:
-      env_vars:
-        - name: MAVEN_OPTS
-          value: "-Dmaven.repo.local=.m2"
-      prologue:
-        commands:
-          - checkout
-          - cache restore spring-pipeline-build-$SEMAPHORE_GIT_BRANCH-$(checksum pom.xml),spring-pipeline-build-$SEMAPHORE_GIT_BRANCH,spring-pipeline-build
-          - cache restore spring-pipeline-maven-$SEMAPHORE_GIT_BRANCH-$(checksum pom.xml),spring-pipeline-maven-$SEMAPHORE_GIT_BRANCH,spring-pipeline-maven
-      jobs:
-      - name: Benchmark
-        commands:
-          - java -version
-          # Run application in detached mode:
-          - java -jar target/spring-pipeline-demo.jar > /dev/null &
-          # Wait for the spring boot application to boot
-          - sleep 20
-          - mvn -q jmeter:jmeter
-          - mvn jmeter:results
