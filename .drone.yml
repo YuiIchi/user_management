@@ -20,7 +20,7 @@ steps:
   - mvn --version
   - java -version
    
-- name: wechat
+- name: wechatabc
   image: lizheming/drone-wechat
   settings:
     corpid: 
