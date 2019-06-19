@@ -2,6 +2,18 @@
 kind: pipeline
 name: info
 
+wechat:
+  image: clem109/drone-wechat
+  corpid: corpid
+  corp_secret: secret
+  agent_id: 1234567
+  title: ${DRONE_REPO_NAME}
+  description: "Build Number: ${DRONE_BUILD_NUMBER} failed. ${DRONE_COMMIT_AUTHOR} please fix. Check the results here: ${DRONE_BUILD_LINK} "
+  msg_url: ${DRONE_BUILD_LINK}
+  btn_txt: btn
+  when:
+    status: [ failure ]
+    
 steps:
  - name: prepare
    image: maven:3-jdk-8
@@ -15,14 +27,4 @@ trigger:
   event:
   - push
 
-wechat:
-  image: clem109/drone-wechat
-  corpid: corpid
-  corp_secret: secret
-  agent_id: 1234567
-  title: ${DRONE_REPO_NAME}
-  description: "Build Number: ${DRONE_BUILD_NUMBER} failed. ${DRONE_COMMIT_AUTHOR} please fix. Check the results here: ${DRONE_BUILD_LINK} "
-  msg_url: ${DRONE_BUILD_LINK}
-  btn_txt: btn
-  when:
-    status: [ failure ]
+
