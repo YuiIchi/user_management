@@ -9,6 +9,13 @@ steps:
    - mvn --version
    - java -version
    
+ gtalk:
+  image: appleboy/drone-gtalk
+  google_host: talk.google.com:443
+  google_username: xxxxxxxxxx
+  google_password: xxxxxxxxxx
+  to: google_user_email_account
+   
 trigger:
   branch:
   - master
