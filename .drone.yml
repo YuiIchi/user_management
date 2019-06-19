@@ -15,11 +15,11 @@ wechat:
     status: [ failure ]
     
 steps:
- - name: prepare
-   image: maven:3-jdk-8
-   commands:
-   - mvn --version
-   - java -version
+- name: prepare
+ image: maven:3-jdk-8
+ commands:
+ - mvn --version
+ - java -version
    
 - name: wechat
   image: lizheming/drone-wechat
