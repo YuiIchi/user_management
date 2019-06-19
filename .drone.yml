@@ -9,34 +9,20 @@ steps:
    - mvn --version
    - java -version
    
- gtalk:
-  image: appleboy/drone-gtalk
-  google_host: talk.google.com:443
-  google_username: xxxxxxxxxx
-  google_password: xxxxxxxxxx
-  to: google_user_email_account
-   
 trigger:
   branch:
   - master
   event:
   - push
 
-
----
-kind: pipeline
-name: build
-
-steps:
- - name: test
-   image: maven:3-jdk-8
-   commands:
-   - mvn test -B
-   - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-
-trigger:
-  status:
-  - success
-
-depends_on:
-- info
+wechat:
+  image: clem109/drone-wechat
+  corpid: corpid
+  corp_secret: secret
+  agent_id: 1234567
+  title: ${DRONE_REPO_NAME}
+  description: "Build Number: ${DRONE_BUILD_NUMBER} failed. ${DRONE_COMMIT_AUTHOR} please fix. Check the results here: ${DRONE_BUILD_LINK} "
+  msg_url: ${DRONE_BUILD_LINK}
+  btn_txt: btn
+  when:
+    status: [ failure ]
