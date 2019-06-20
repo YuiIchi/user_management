@@ -4,6 +4,15 @@
 #
 version: 2
 jobs:
+  info:
+    docker:
+      # specify the version you desire here
+      - image: circleci/openjdk:8-jdk
+
+      steps:
+        - run: pwd
+        - run: ls
+        
   build:
     docker:
       # specify the version you desire here
