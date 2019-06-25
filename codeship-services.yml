@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    environment:
+      ENV: my-var
+  data:
+    image: busybox
+    volumes:
+      - ./tmp/data:/data
+      
