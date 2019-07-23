@@ -46,7 +46,7 @@ jobs:
 
       # store artifact
       - store_artifacts:
-          path: /target/UserAdmin.war
+          path: /home/circleci/repo/target/UserAdmin.war
       
 workflows:
   version: 2
