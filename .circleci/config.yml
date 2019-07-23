@@ -1,3 +1,595 @@
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 10.0.38.4:6443 --token 4pdt0b.1a4q6659dja9cgc1 \
+    --discovery-token-ca-cert-hash sha256:8f7460614588c3488769460df13aa579e7cc4fe04672117671f9249f663b0647 
+[root@poc-22 ~]# 
+
+
+刚才的会议讨论：
+
+巡检管理的功能模块：
+1. 我有什么指标：指标管理
+负责管理插件以及插件生成的指标，包括指标的名称、说明、值类型等采集相关的设定；
+
+
+kubeadm join 10.0.38.4:6443 --token ce3xk4.xdc626w2dgids9da \
+    --discovery-token-ca-cert-hash sha256:5ac56eeaaec9dac79e41fa8ec5a82210bfc8fb93eb53d64edb30c0c91b3ff698 
+[root@poc-22 ~]#  cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+
+↓
+
+2. 我看什么指标：巡检模板
+负责管理巡检报告中查看的指标项目的checklist，并且设置指标可以展示的样式。
+
+↓
+
+3. 我怎么执行巡检：巡检任务
+创建任务，选择模板，指定执行对象，指定执行的频率（一次/周期），点击保存或者立即执行（一次）。
+
+↓
+
+4. 我怎么查看巡检执行的结果：巡检历史
+巡检的审计历史。
+
+其他结论：
+①. 巡检插件是全量执行的，会产生全量的数据进行上报，用来渲染任意的模板；
+②. 对值类型进行枚举，对不同的值类型，可以对应不同的展示方式（有默认的样式设定）；
+
+
+
+
+
+我和Kenny对了一遍。目前 Agent 在 windows 2016 上存在的问题：
+①. 英文版系统：因为英文系统的中文编码问题，导致部署插件在部署有特殊编码或者中文字符的情况下异常；
+
+②. cmdb采集插件采集的操作系统版本号不一致。
+这个问题其实在我们新的agent版本都修复，但目前国信用的2.32版本比较旧，所以仍存在这些问题。
+
+windows 2016 英文系统是一定要支持吗？如果是这样，我们需要升级新的agent版本或者插件去修复这些问题。
+
+
+针对单一进程提供多个监听端口，产生多个服务实例，这些服务实例的关系建立不准确的情况，例如：
+
+假设一个 Java 应用，使用 tomcat 进程提供了HTTP 80 和 JMX 10000，tomcat 进程访问后台数据库进程，TCP 3306，服务实例建立关系时会建立 2 条关系：
+
+①. HTTP 80 -- TCP 3306；
+②. JMX 10000 -- TCP 3306。
+
+而第二条服务实例的关系是不正确的。
+
+
+
+解决方案：
+
+我们提供一个服务实例数据质量巡检的脚本，脚本执行设定的规则，把符合规则的服务实例导出来，供用户去检阅，并且完善应用的服务特征。
+
+例如针对刚才的情况，我们对巡检脚本添加一条规则，规则条件：
+
+①. 同一个应用下绑定多个服务实例；
+②. 服务实例的应用特征不一致（例如端口或者cmd）；
+③. 这些服务实例是同一个主机节点。
+
+符合这个规则的服务实例全部扫描出来，导出给用户检阅，用户检阅完毕后，可以根据这些服务实例的情况去完善应用进程特征，例如会为这个 Java 应用添加端口特征 80，那么 JMX 实例就不会和应用产生关联了。
+
+以后遇到其他类似的情况，我们可以添加巡检规则来检查不符合要求的服务实例，最终完善应用特征库。
+
+curl 'https://g.codefresh.io/api/builds/5c922bc546abc9b88af3a152' --compressed -H 'content-type:application/json; charset=utf-8' -H 'x-access-token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1YzZjZDExYThjNTIwZTg1YmMwMjNkOGIiLCJhY2NvdW50SWQiOiI1YzZjZDExYThjNTIwZTAwNDIwMjNkOGMiLCJpYXQiOjE1NTQyNzM1OTIsImV4cCI6MTU1Njg2NTU5Mn0.oCqnN6KcKCuX-x80aBCOTyK-HeOMrPNA8Jzj34M_u-8' --data-binary '{"serviceId":"5c922bc546abc9b88af3a152","type":"build","repoOwner":"YuiIchi","branch":"master","repoName":"user_management"}'
+
+eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLTlidGZ0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiI2NTBiZWU3Ny01NjdhLTExZTktODQ3OC0wMDE3ZmEwMzI1ZTEiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.N-A-r2Q3Cchsuu7vimum0F2O4n9KNpuRl3AS0oaDnSt6oTk1337XWiifmtH46uWadbzblEM_xRZxPVhzf24__sQIivURiOnRlQsVJdiykJueLfi5kbv3CTeZ-HCI2txhRJfXGKL3lWNLAtJU5rTyXGsapEg8_bUvZ_TjMAVoIGTAFJZ2XIzQDE0AQLtC1fLjIYe3qnYuO3oTp6hzeFGxh2lL_QwbOCokOyylz5luqG_XCpUck9l3ZUdWqCAptOopwx9TEhZ9bR_xROQd61YppvXe-7AUy9yt-F_cq19NsbWNwewDB-5ItGp6-vQ9ThCme5M9EhbXNfPJVkNU27SZoQ
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.8
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: nginx-vol
+      volumes:
+      - name: nginx-vol
+        emptyDir: {}
+
+
+
+
+[root@poc-22 ~]# helm install --name helmchart-mariadb stable/mariadb                                                                        
+NAME:   helmchart-mariadb
+LAST DEPLOYED: Wed May 15 12:41:53 2019
+NAMESPACE: default
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/ConfigMap
+NAME                      DATA  AGE
+helmchart-mariadb-master  1     0s
+helmchart-mariadb-slave   1     0s
+helmchart-mariadb-tests   1     0s
+
+==> v1/Service
+NAME                     TYPE       CLUSTER-IP    EXTERNAL-IP  PORT(S)   AGE
+helmchart-mariadb        ClusterIP  10.98.35.239  <none>       3306/TCP  0s
+helmchart-mariadb-slave  ClusterIP  10.98.1.44    <none>       3306/TCP  0s
+
+==> v1beta1/StatefulSet
+NAME                      DESIRED  CURRENT  AGE
+helmchart-mariadb-master  1        0        0s
+helmchart-mariadb-slave   1        0        0s
+
+==> v1/Secret
+NAME               TYPE    DATA  AGE
+helmchart-mariadb  Opaque  2     0s
+
+
+NOTES:
+
+Please be patient while the chart is being deployed
+
+Tip:
+
+  Watch the deployment status using the command: kubectl get pods -w --namespace default -l release=helmchart-mariadb
+
+Services:
+
+  echo Master: helmchart-mariadb.default.svc.cluster.local:3306
+  echo Slave:  helmchart-mariadb-slave.default.svc.cluster.local:3306
+
+Administrator credentials:
+
+  Username: root
+  Password : $(kubectl get secret --namespace default helmchart-mariadb -o jsonpath="{.data.mariadb-root-password}" | base64 --decode)
+
+To connect to your database:
+
+  1. Run a pod that you can use as a client:
+
+      kubectl run helmchart-mariadb-client --rm --tty -i --restart='Never' --image  docker.io/bitnami/mariadb:10.3.15 --namespace default --command -- bash
+
+  2. To connect to master service (read/write):
+
+      mysql -h helmchart-mariadb.default.svc.cluster.local -uroot -p my_database
+
+  3. To connect to slave service (read-only):
+
+      mysql -h helmchart-mariadb-slave.default.svc.cluster.local -uroot -p my_database
+
+To upgrade this helm chart:
+
+  1. Obtain the password as described on the 'Administrator credentials' section and set the 'rootUser.password' parameter as shown below:
+
+      ROOT_PASSWORD=$(kubectl get secret --namespace default helmchart-mariadb -o jsonpath="{.data.mariadb-root-password}" | base64 --decode)
+      helm upgrade helmchart-mariadb stable/mariadb --set rootUser.password=$ROOT_PASSWORD
+
+
+
+一级菜单
+
+持续交付
+
+* 研发管理
+	产品看板
+
+* 集成管理
+	持续集成
+
+* 变更管理
+	应用管理
+	配置中心
+	数据库变更
+	发布计划
+
+* 制品管理
+	制品库
+
+	
+
+二级菜单
+
+* 应用管理
+	* 应用概览：待办、历史、事件、资源视图
+	* 环境管理
+		集群管理
+		配置管理
+	* 应用设置
+		制品管理
+		负载均衡
+		权限管理
+		其他设置
+
+	* 应用监控
+	* 部署历史
+
+* 发布计划
+	发布概览
+	编排方案
+	编排模板
+	发布历史
+
+
+案例名称：某公司的 WebService 应用，名为 portal_web（门户前端），所属系统 PORTAL（门户业务）
+测试环境：
+功能测试环境-uat01
+HOST：2 台，192.168.1.1、192.168.1.2；
+制品：portal_web，部署路径：/opt/portal_web_uat01
+部署节点特征：
+工作目录：/opt/portal_web_uat01
+部署端口：8080
+
+负载均衡：
+使用测试环境的F5，VS_IP：192.168.1.50，VS名称：VS_PORTAL_WEB_UAT01_1.50；
+POOL名称：POOL_PORTAL_WEB_UAT01，POOL Member：192.168.1.1:8080、192.168.1.2:8080；
+
+服务信息
+服务名称：portal_web_uat01
+服务地址：uat01.console.cn
+服务端口：8080
+
+
+生产环境：
+上海集群-SH_PROD
+HOST：20 台，172.16.0.1 ~ 172.16.0.20；
+制品：portal_web，部署路径：/opt/portal_web
+部署节点特征：
+工作目录：/opt/portal_web
+部署端口：8080
+
+负载均衡：
+使用测试环境的F5，VS_IP：40.125.0.93，VS名称：VS_PORTAL_WEB_SH_PROD_0.93；
+POOL名称：POOL_PORTAL_WEB_SH_PROD，POOL Member：172.16.0.1 ~ 20:8080；
+
+服务信息
+服务名称：portal_web_prod
+服务地址：www.console.com
+服务端口：80
+pod/uat01-5f8d449c9b-bpbn4       1/1     Running   0          6d5h
+pod/uat01-5f8d449c9b-fnvpj       1/1     Running   0          6d5h
+pod/nginx-deployment-5f8d449c9b-jgkc6       1/1     Running   0          6d5h
+pod/nginx-deployment-5f8d449c9b-kj5mg       1/1     Running   0          6d5h
+pod/nginx-deployment-5f8d449c9b-xvr42
+
+
+1. 制品的绑定由应用来
+
+
+
+
+开发环境(√)
+	查看权限(√)
+		xxx
+		xxx
+		xxx
+
+	编辑权限
+		xxx
+		xxx
+		xxx
+
+	执行权限
+		xxx
+
+	xxx	（√）		xxc
+	xxx			xxx
+	xxx			xxx
+
+F5
+	查看权限
+	VS
+	POOL
+	Irule
+
+
+测试环境（×）
+	xxx			xxx
+	xxx			xsf
+
+生产环境
+	xxx
+
+
+
+修改deployment
+
+扩缩容 -- 不会生成版本
+升级制品版本 -- 产生版本
+新增、编辑、删除存储卷 Storage
+新增、编辑、删除资源限制 Resource Limit
+新增、编辑、删除健康检查 Probe
+
+
+
+
+
+
+http://tapd.easyops.local/pages/viewpage.action?pageId=22386994
+
+应用部署3.0 with sn version 的设计方案。
+
+应用部署3.0新特性能力：
+1. 技术上：底层技术上采用了 Terraform 管理基础设施，采用基础设施即代码的管理方式，在部署过程实现面向资源对象的 CRUD 操作，并且社区已经支持非常丰富的基础设施插件，对主流的公有云、私有云以及容器编排集群已全部支持。
+
+2. 产品上：
+①. 新增首页：
+用户进入部署系统，对可更新应用、待更新应用的快速入口、部署中的任务、最近变更、拥有应用资源其他信息都有相应的需求，这些需求将会在工作台的首页得到满足。
+
+②. 修改核心模型：
+应用 - 集群 - 服务节点，应用部署系统首次引入服务节点的概念，服务节点用于：
+a). 跟踪部署后的部署实例，配合监控系统进行实时获取和分析部署结果，部署系统将第一次获取对部署实例的真正控制能力；
+b) .和LB进行整合，为LB提供 Member 列表进行部署策略的动态刷新；
+
+③. 强化集群管理能力
+集群可自行选择基础设施，设定制品发布策略，设定服务节点特征，设定关联的负载均衡设备，提供基于单个集群的部署策略（会联动LB）；
+
+并且可在部署后通过服务特征，实时跟踪服务节点的部署实例状态。
+
+④. 收纳管理类型操作，把应用的环境相关操作标记为 “环境管理”
+应用最为强大的能力是环境管理能力，应用是同一组服务在不同环境下的资源封装，因此应用必须有明确的环境管理操作，例如：
+集群管理：服务在不同环境下的部署所需的基础设施资源管理；
+负载均衡：服务在不同环境下所使用的负载均衡服务；
+配置服务：服务在不同环境下所使用的配置
+
+⑤. 所有的核心资源对象：集群、LB等等均是配置文件，配置信息存储在 CMDB，并且可以根据配置版本来升级或者回滚版本，Terraform 从 CMDB 中获取配置信息执行变更后，部署系统回写 CMDB，完全实现资源编排。
+
+⑥. 收纳变更事件和部署历史
+以往所有系统的部署任务和变更历史，都需要前往 EasyOps 的任务管理中心进行查看，实际上这种操作会导致用户在操作过程中进行了系统的跳转，但其依然在完成部署系统的操作。
+因此我们优化和改善了该项操作，复用这些变更事件、部署事件的构件，在应用部署系统中进行查看，无需产生系统级别的跳转。
+
+文档还包含核心模型、基于主机设施的核心模型扩展、基于容器设施的核心模型扩展等多个场景的案例推演。
+
+详情请各位查看文档。
+                   
+
+
+cluster： development
+	* namespace：frontend
+
+
+	* namespace：storage
+
+
+
+
+Cluster：scratch
+	* namespace：defualt
+	KUBERNETES_PREFERRED_SCHEDULING_TERM
+
+rules:  IngressRule 
+   host
+   http:  HTTPIngressRuleValue
+   		paths:  HTTPIngressPath
+   			backend 结构体
+   			path
+
+
+
+static
+RG  V1.0
+	v1.1
+	v1.2(active)
+
+
+dymic
+192.168.1.1   rg.1.1
+
+192.168.1.2	  rg.1.2
+
+
+replicaset xxxxxx  rg.1.1
+	pod xxxx rg.1.1
+	pdd xxxx rg.1.1
+
+
+replicaset xxxxxx rg.1.2
+	pod xxxx rg.1.2
+	pod xxxx rg.1.2
+
+
+service rg.1.2
+igress rg.1.2
+
+
+
+rg 1.0
+rc-abc
+
+rg 1.1
+rc-abc
+rc-def
+
+1. rg - rc  new rc?
+2. rc-def - rg.1.1
+
+3. rg.1.0 rc-abc
+   rg.1.1 rc-def
+
+
+
+rg n 1 rc
+
+
+
+
+rg 1.0
+
+rc-abc
+servic-abc
+
+
+rg 1.1
+
+rc-abc 0
+service-def
+
+
+rg 1.2
+
+rc-def 10
+service-def
+
+
+rg 1.3
+rc-abc
+
+
+EPS（EasyOps Pipeline System）全新的流水线管理：
+
+EPS 是优维产品线所提供的新一代的流水线系统，用于支撑 EasyOps 持续交付链的落地。
+
+该系统采用业界主流的 Pipeline As Code 工作模式，支持多分支流水线特性，支持流水线动态随着分支和代码版本进行变化，并且提供代码配置和界面配置互相兼容的模式，在多种角色参与中依然可以提供丰富的配置选择；
+
+EPS 将全面支持 Docker Engine，Pipeline 中最重要的结构元素 Step 将使用 Docker Image 来定义，并且运行在 Docker 容器中，并且可扩展到 Kubernetes 集群中运行，对流水线任务提供强大的扩容缩容调度编排等能力
+（同一条流水线中的所有 Step 将会共享同一个 PV (Persistent Volume)，用于存放同一个 WorkSpace）
+
+同时，Pipeline 的 Step 使用了 Docker 镜像进行编写和实现，使得流水线的插件定义更加灵活、简单和易于扩展。
+
+
+type: kubernetes
+kind: deployment
+
+
+RG Status:
+ready ->  deploying -> active
+					-> inactive
+
+
+部署新版本
+扩容
+缩容
+删除rg
+
+
+
+create rg:
+
+1. basic info 
+
+rg_name：中文
+rg_type
+rg_k8s_cluster
+artifact
+
+2. infrastructure setting
+
+kind: deployment / stateful set / daemon set / job
+
+metadata:
+	name: 「appname」-「env」-deployment-xxxxxxx
+	ns
+	labels:
+	annotations：lj6y7uhjv ccvm/d/dlk.uzmuZJ.szZ8ic fbv v
+	[][''ll7j,56uuduk/dicv.k.a.ukm
+	
+replicas
+containers	
+volumes
+advance
+
+3. load balancer setting
+
+kind: service / ingress
+
+4. service settting
+02-应用部署3.0设计方案(With SN Version)
+附录-应用部署3.0设计方案(With SN Version)-领域模型图
+
+
+
+
+系统 - 组件  -  RG（集群） - 主机 - 进程实例（IP:PORT）
+						- deployment - pod(IP:PORT)
+
+
+stage:
+	- clone
+	- build
+	- deploy
+	- test
+	- custom stage
+
+
+
+steps:
+	- name: git-clone
+	  stage: build
+	  xx
+	  xx
+	  xx
+
+
+源码管理 - 构建前准备 - 构建 - 构建后动作 - 制品管理 - 部署 - 测试
+
+stage - plugins 映射
+
+
+
+steps:
+	step:
+		name: abc
+		image: abc:v1
+		commmands:
+			- a
+			- b
+			- c
+		envs:
+			- a:1
+			- b:2
+			- c:3
+
+	akito:
+		image: xxx
+		user_name: akito
+		password: akito-pass
+		token: akito-token
+
+
+	step:
+
+
+
+---
+kind: pipeline
+name: info
+
+wechat:
+  image: clem109/drone-wechat
+  corpid: corpid
+  corp_secret: secret
+  agent_id: 1234567
+  title: ${DRONE_REPO_NAME}
+  description: "Build Number: ${DRONE_BUILD_NUMBER} failed. ${DRONE_COMMIT_AUTHOR} please fix. Check the results here: ${DRONE_BUILD_LINK} "
+  msg_url: ${DRONE_BUILD_LINK}
+  btn_txt: btn
+  when:
+    status: [ failure ]
+
+
+
 # Java Maven CircleCI 2.0 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-java/ for more details
@@ -43,6 +635,10 @@ jobs:
 
       # run tests!
       - run: mvn integration-test
+
+      # store artifact
+      - store_artifacts:
+          path: /target/UserAdmin.war
       
 workflows:
   version: 2
