@@ -1,0 +1,14 @@
+inputSet:
+  name: Build_user_management_1689150249815-push-trigger-input-set
+  identifier: Build_user_management_1689150249815pushtriggerinputset
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: Build_user_management_1689150249815
+    properties:
+      ci:
+        codebase:
+          build:
+            type: branch
+            spec:
+              branch: <+trigger.branch>
